@@ -21,16 +21,22 @@ var app = new Vue({
     currentUser:null
   },
   created: function(){
-    window.onbeforeunload=()=>{
-      let dataString = JSON.stringify(this.todoList) 
-      window.localStorage.setItem('myTodos', dataString)
-    }
-    let oldDataString = window.localStorage.getItem('myTodos')
-    let oldData = JSON.parse(oldDataString)
-    this.todoList = oldData || []
     this.currentUser = this.getCurrentUser()
   },
   methods:{
+    saveTodos:function(){
+      let dataString = JSON.stringify(this.todoList) 
+      var AVTodos = AV.Object.extend('AllTodos');
+      var avTodos = new AVTodos();
+      avTodos.set('content', dataString);
+      avTodos.save().then(function (todo) {
+        // 成功保存之后，执行其他逻辑.
+        console.log('保存成功');
+      }, function (error) {
+        // 异常处理
+        console.error('保存失败');
+      })
+     },
     addTodo: function(){
       this.todoList.push({
         title: this.newTodo,
@@ -38,10 +44,13 @@ var app = new Vue({
         done: false
       })
       this.newTodo='';
+      console.log(123)
+      this.saveTodos()
     },
     removeTodo: function(todo){
       let index = this.todoList.indexOf(todo);
       this.todoList.splice(index, 1);
+      this.saveTodos();
     },
     signUp: function(){
       console.log(213)
@@ -75,5 +84,5 @@ var app = new Vue({
       this.currentUser = null;
       window.location.reload();
     }
-  }
-});      
+  },
+})   
