@@ -281,8 +281,14 @@ _leancloudStorage2.default.init({
 var app = new _vue2.default({
     el: '#app',
     data: {
+        actionType: 'signUp',
         newTodo: '',
-        todoList: []
+        todoList: [],
+        currentUser: null,
+        formData: {
+            username: '',
+            password: ''
+        }
     },
     methods: {
         addTodo: function addTodo() {
@@ -297,13 +303,48 @@ var app = new _vue2.default({
         deleteTodo: function deleteTodo(todo) {
             var index = this.todoList.indexOf(todo);
             this.todoList.splice(index, 1);
+        },
+        signUp: function signUp() {
+            var _this = this;
+
+            var user = new _leancloudStorage2.default.User();
+            user.setUsername(this.formData.username);
+            user.setPassword(this.formData.password);
+            user.signUp().then(function (loginedUser) {
+                _this.currentUser = _this.getCurrentUser();
+            }, function (error) {
+                alert('Signing Up failed');
+            });
+        },
+        signIn: function signIn() {
+            var _this2 = this;
+
+            _leancloudStorage2.default.User.logIn(this.formData.username, this.formData.password).then(function (loginedUser) {
+                _this2.currentUser = _this2.getCurrentUser();
+            }, function (error) {
+                alert('Signing Up failed');
+            });
+        },
+        getCurrentUser: function getCurrentUser() {
+            var _AV$User$current = _leancloudStorage2.default.User.current(),
+                id = _AV$User$current.id,
+                createdAt = _AV$User$current.createdAt,
+                username = _AV$User$current.attributes.username;
+
+            return { id: id, username: username, createdAt: createdAt };
+        },
+        signOut: function signOut() {
+            _leancloudStorage2.default.User.logOut();
+            // 现在的 currentUser 是 null 了
+            this.currentUser = null;
+            window.location.reload();
         }
     },
     created: function created() {
-        var _this = this;
+        var _this3 = this;
 
         window.onbeforeunload = function () {
-            var dataString = JSON.stringify(_this.todoList);
+            var dataString = JSON.stringify(_this3.todoList);
             window.localStorage.setItem('myTodos', dataString);
         };
         var oldDataString = window.localStorage.getItem('myTodos');

@@ -4,18 +4,46 @@
   </head>
   <body>
     <div id="app">
-      <div class="newTask">
-        <input type="text" v-model="newTodo" @keypress.enter="addTodo">
-      </div>
-      <ol class="todos">
-        <li v-for="todo in todoList">
-          <button v-on:click="deleteTodo">X</button>
-          {{ todo.title }}<input type="checkbox" id="checkbox" v-model="todo.done">
-          <span v-if="todo.done===true">已完成</span>
-          <span v-else>未完成</span>
-        </li>
-      </ol>
-    </div>
+      <section id="signInAndSignUp" v-if="!currentUser">
+          <label><input type="radio" name="type" v-model="actionType" value="signUp">Sign Up</label>
+          <label><input type="radio" name="type" v-model="actionType" value="signIn">Sign In</label>
+          <div id="signIn" v-if="actionType =='signIn'">
+              <form @submit.prevent="signIn">
+                  <label>User</label>
+                  <input type="text" v-model="formData.username">
+                  <label>Password</label>
+                  <input type="password" v-model="formData.password">
+                  <input type="submit" value="Sign In">
+              </form>
+            </div>
+            <div id="signUp" v-if="actionType =='signUp'">
+              <form @submit.prevent="signUp">
+                  <label>User</label>
+                  <input type="text" v-model="formData.username">
+                  <label>Password</label>
+                  <input type="password" v-model="formData.password">
+                  <input type="submit" value="Sign Up">
+              </form>
+            </div>
+      </section>
+
+      <section id="todo" v-if="currentUser">
+          <h2>Hello {{formData.username}}</h2>
+          <div class="newTask">
+              <input type="text" v-model="newTodo" @keypress.enter="addTodo">
+            </div>
+            <ol class="todos">
+              <li v-for="todo in todoList">
+                <button v-on:click="deleteTodo">X</button>
+                {{ todo.title }}<input type="checkbox" id="checkbox" v-model="todo.done">
+                <span v-if="todo.done===true">已完成</span>
+                <span v-else>未完成</span>
+              </li>
+            </ol>
+            <button @click="signOut">Log Out</button>
+          </div>
+      </section>
+
     <script src="bundle.js"></script>
   </body>
 </html>
