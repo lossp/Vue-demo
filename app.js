@@ -128,8 +128,11 @@ var app = new Vue({
         }
     },
     created:function(){
-        this.currentUser = this.getCurrentUser();
-        console.log(this.currentUser)
-        this.fetchTodos();
+        window.onbeforeunload=()=>{
+            this.currentUser = this.getCurrentUser();
+            console.log(this.currentUser)
+            this.fetchTodos();
+        }
+
     }
 })
