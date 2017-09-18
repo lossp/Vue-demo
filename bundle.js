@@ -291,6 +291,17 @@ var app = new _vue2.default({
         }
     },
     methods: {
+        updateTodos: function updateTodos() {
+            var dataString = JSON.stringify(this.todoList);
+            console.log(dataString);
+            var avTodos = _leancloudStorage2.default.Object.createWithoutData('AllTodos', this.todoList.id);
+            // 修改属性
+            avTodos.set('content', dataString);
+            // 保存到云端
+            avTodos.save().then(function () {
+                console.log('Updated');
+            });
+        },
         addTodo: function addTodo() {
             this.todoList.push({
                 title: this.newTodo,
@@ -299,10 +310,13 @@ var app = new _vue2.default({
             });
             console.log(this.todoList);
             this.newTodo = '';
+            this.saveOrUpdateTodos();
         },
         deleteTodo: function deleteTodo(todo) {
             var index = this.todoList.indexOf(todo);
             this.todoList.splice(index, 1);
+            this.saveOrUpdateTodos();
+            console.log('delete');
         },
         signUp: function signUp() {
             var _this = this;
@@ -321,35 +335,81 @@ var app = new _vue2.default({
 
             _leancloudStorage2.default.User.logIn(this.formData.username, this.formData.password).then(function (loginedUser) {
                 _this2.currentUser = _this2.getCurrentUser();
+                console.log(_this2.currentUser);
+                _this2.fetchTodos();
             }, function (error) {
                 alert('Signing Up failed');
             });
         },
         getCurrentUser: function getCurrentUser() {
-            var _AV$User$current = _leancloudStorage2.default.User.current(),
-                id = _AV$User$current.id,
-                createdAt = _AV$User$current.createdAt,
-                username = _AV$User$current.attributes.username;
+            var currentUser = _leancloudStorage2.default.User.current();
+            if (currentUser) {
+                var id = currentUser.id,
+                    createdAt = currentUser.createdAt,
+                    username = currentUser.attributes.username;
 
-            return { id: id, username: username, createdAt: createdAt };
+                return { id: id, username: username, createdAt: createdAt };
+            } else {
+                return null;
+            }
         },
         signOut: function signOut() {
             _leancloudStorage2.default.User.logOut();
             // 现在的 currentUser 是 null 了
             this.currentUser = null;
             window.location.reload();
+        },
+        saveTodos: function saveTodos() {
+            var _this3 = this;
+
+            var dataString = JSON.stringify(this.todoList);
+            // 声明一个 Todo 类型
+            var AVTodos = _leancloudStorage2.default.Object.extend('AllTodos');
+            // 新建一个 Todo 对象
+            var avTodos = new AVTodos();
+            var acl = new _leancloudStorage2.default.ACL();
+            acl.setReadAccess(_leancloudStorage2.default.User.current(), true);
+            acl.setWriteAccess(_leancloudStorage2.default.User.current(), true);
+            avTodos.set('content', dataString);
+            avTodos.setACL(acl); //important!!!
+            avTodos.save().then(function (todo) {
+                _this3.todoList.id = todo.id;
+                alert('Saved');
+                console.log(_this3.todoList.id);
+            }, function (error) {
+                alert('Failed');
+            });
+        },
+        saveOrUpdateTodos: function saveOrUpdateTodos() {
+            if (this.todoList.id) {
+                console.log(this.todoList.id);
+                this.updateTodos();
+            } else {
+                this.saveTodos();
+            }
+        },
+        fetchTodos: function fetchTodos() {
+            var _this4 = this;
+
+            if (this.currentUser) {
+                // 查询某个 AV.Object 实例，之后进行修改
+                var query = new _leancloudStorage2.default.Query('AllTodos');
+                // find 方法是一个异步方法，会返回一个 Promise，之后可以使用 then 方法
+                query.find().then(function (todo) {
+                    var allTodos = todo[0];
+                    var id = allTodos.id;
+                    _this4.todoList = JSON.parse(allTodos.attributes.content);
+                    _this4.todoList.id = id;
+                }, function (error) {
+                    console.log(error);
+                });
+            }
         }
     },
     created: function created() {
-        var _this3 = this;
-
-        window.onbeforeunload = function () {
-            var dataString = JSON.stringify(_this3.todoList);
-            window.localStorage.setItem('myTodos', dataString);
-        };
-        var oldDataString = window.localStorage.getItem('myTodos');
-        var oldData = JSON.parse(oldDataString);
-        this.todoList = oldData || [];
+        this.currentUser = this.getCurrentUser();
+        console.log(this.currentUser);
+        this.fetchTodos();
     }
 });
 
